@@ -3,13 +3,10 @@ package br.ufpe.cin.if1001.rss;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import org.xml.sax.Parser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.ByteArrayOutputStream;
@@ -49,16 +46,16 @@ public class MainActivity extends Activity {
         new CarregaRSStask().execute(RSS_FEED);
     }
 
-    private class CarregaRSStask extends AsyncTask<String, Void, List<String>> {
+    private class CarregaRSStask extends AsyncTask<String, Void, List<ItemRSS>> {
         @Override
         protected void onPreExecute() {
             Toast.makeText(getApplicationContext(), "iniciando...", Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        protected List<String> doInBackground(String... params) {
+        protected List<ItemRSS> doInBackground(String... params) {
             //String conteudo = "provavelmente deu erro...";
-            List<String> listContent = new ArrayList<>();
+            List<ItemRSS> listContent = new ArrayList<>();
 
             try {
                 listContent = getRssFeed(params[0]);
@@ -71,22 +68,19 @@ public class MainActivity extends Activity {
         }
 
         @Override
-        protected void onPostExecute(List<String> rows) {
+        protected void onPostExecute(List<ItemRSS> rows) {
             Toast.makeText(getApplicationContext(), "terminando...", Toast.LENGTH_SHORT).show();
             //ajuste para usar uma ListView
-            //o layout XML a ser utilizado esta em res/layout/item_lista.xmll
-
-            ArrayAdapter<String> listAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.item_lista, R.id.item_data, rows);
-            conteudoRSS.setAdapter(listAdapter);
-            //conteudoRSS.setText(s);
+            //o layout XML a ser utilizado esta em res/layout/itemlista.xml
+            conteudoRSS.setAdapter(new NewsAdapter(getApplicationContext(), rows));
         }
     }
 
     //Opcional - pesquise outros meios de obter arquivos da internet
-    private List<String> getRssFeed(String feed) throws IOException, XmlPullParserException {
+    private List<ItemRSS> getRssFeed(String feed) throws IOException, XmlPullParserException {
         InputStream in = null;
         String rssFeed;
-        List<String> parser;
+        List<ItemRSS> parser;
 
         try {
             URL url = new URL(feed);
@@ -99,7 +93,7 @@ public class MainActivity extends Activity {
             }
             byte[] response = out.toByteArray();
             rssFeed = new String(response, "UTF-8");
-            parser = ParserRSS.parserSimples(rssFeed);
+            parser = ParserRSS.parse(rssFeed);
 
         } finally {
             if (in != null) {
