@@ -83,6 +83,8 @@ public class MainActivity extends Activity {
             }
             byte[] response = out.toByteArray();
             rssFeed = new String(response, "UTF-8");
+
+
         } finally {
             if (in != null) {
                 in.close();
