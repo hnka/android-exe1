@@ -3,14 +3,22 @@ package br.ufpe.cin.if1001.rss;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.xml.sax.Parser;
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -24,7 +32,7 @@ public class MainActivity extends Activity {
     //http://pox.globo.com/rss/g1/tecnologia/
 
     //use ListView ao invés de TextView - deixe o atributo com o mesmo nome
-    private TextView conteudoRSS;
+    private ListView conteudoRSS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +40,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         //use ListView ao invés de TextView - deixe o ID no layout XML com o mesmo nome conteudoRSS
         //isso vai exigir o processamento do XML baixado da internet usando o ParserRSS
-        conteudoRSS = (TextView) findViewById(R.id.conteudoRSS);
+        conteudoRSS = (ListView) findViewById(R.id.conteudoRSS);
     }
 
     @Override
@@ -41,37 +49,45 @@ public class MainActivity extends Activity {
         new CarregaRSStask().execute(RSS_FEED);
     }
 
-    private class CarregaRSStask extends AsyncTask<String, Void, String> {
+    private class CarregaRSStask extends AsyncTask<String, Void, List<String>> {
         @Override
         protected void onPreExecute() {
             Toast.makeText(getApplicationContext(), "iniciando...", Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        protected String doInBackground(String... params) {
-            String conteudo = "provavelmente deu erro...";
+        protected List<String> doInBackground(String... params) {
+            //String conteudo = "provavelmente deu erro...";
+            List<String> listContent = new ArrayList<>();
+
             try {
-                conteudo = getRssFeed(params[0]);
+                listContent = getRssFeed(params[0]);
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (XmlPullParserException e) {
+                e.printStackTrace();
             }
-            return conteudo;
+            return listContent;
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(List<String> rows) {
             Toast.makeText(getApplicationContext(), "terminando...", Toast.LENGTH_SHORT).show();
-
             //ajuste para usar uma ListView
-            //o layout XML a ser utilizado esta em res/layout/itemlista.xml
-            conteudoRSS.setText(s);
+            //o layout XML a ser utilizado esta em res/layout/item_lista.xmll
+
+            ArrayAdapter<String> listAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.item_lista, R.id.item_data, rows);
+            conteudoRSS.setAdapter(listAdapter);
+            //conteudoRSS.setText(s);
         }
     }
 
     //Opcional - pesquise outros meios de obter arquivos da internet
-    private String getRssFeed(String feed) throws IOException {
+    private List<String> getRssFeed(String feed) throws IOException, XmlPullParserException {
         InputStream in = null;
-        String rssFeed = "";
+        String rssFeed;
+        List<String> parser;
+
         try {
             URL url = new URL(feed);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -83,13 +99,13 @@ public class MainActivity extends Activity {
             }
             byte[] response = out.toByteArray();
             rssFeed = new String(response, "UTF-8");
-
+            parser = ParserRSS.parserSimples(rssFeed);
 
         } finally {
             if (in != null) {
                 in.close();
             }
         }
-        return rssFeed;
+        return parser;
     }
 }
