@@ -1,8 +1,12 @@
 package br.ufpe.cin.if1001.rss;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -73,6 +77,16 @@ public class MainActivity extends Activity {
             //ajuste para usar uma ListView
             //o layout XML a ser utilizado esta em res/layout/itemlista.xml
             conteudoRSS.setAdapter(new NewsAdapter(getApplicationContext(), rows));
+            conteudoRSS.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    NewsAdapter adapter = (NewsAdapter) parent.getAdapter();
+                    ItemRSS selected = (ItemRSS) adapter.getItem(position);
+
+                    Uri uri = Uri.parse(selected.getLink());
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    startActivity(intent);
+                }
+            });
         }
     }
 
