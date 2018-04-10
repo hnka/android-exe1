@@ -2,9 +2,11 @@ package br.ufpe.cin.if1001.rss;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -17,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +29,9 @@ public class MainActivity extends Activity {
     //ao fazer envio da resolucao, use este link no seu codigo!
     private final String RSS_FEED = "http://leopoldomt.com/if1001/g1brasil.xml";
 
+    private final String SHARED_CONFIG = "sharedConfig";
+    private final String RSS_KEY = "rssfeed";
+
     //OUTROS LINKS PARA TESTAR...
     //http://rss.cnn.com/rss/edition.rss
     //http://pox.globo.com/rss/g1/brasil/
@@ -34,6 +40,7 @@ public class MainActivity extends Activity {
 
     //use ListView ao invés de TextView - deixe o atributo com o mesmo nome
     private ListView conteudoRSS;
+    private SharedPreferences sharedConfig;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +49,25 @@ public class MainActivity extends Activity {
         //use ListView ao invés de TextView - deixe o ID no layout XML com o mesmo nome conteudoRSS
         //isso vai exigir o processamento do XML baixado da internet usando o ParserRSS
         conteudoRSS = (ListView) findViewById(R.id.conteudoRSS);
+
+        this.sharedConfig = getSharedPreferences(SHARED_CONFIG, 0);
+        SharedPreferences.Editor editor = sharedConfig.edit();
+        editor.putString(RSS_KEY, getString(R.string.rss_feed_default));
+        editor.commit();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        new CarregaRSStask().execute(RSS_FEED);
+
+        String rssFeed = this.sharedConfig.getString(RSS_KEY, "");
+        URL feedUrl = null;
+        try {
+            feedUrl = new URL(rssFeed);
+            new CarregaRSStask().execute(feedUrl.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
     private class CarregaRSStask extends AsyncTask<String, Void, List<ItemRSS>> {
